@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
-	"github.com/codegangsta/cli"
 	"os"
 	"path/filepath"
 )
@@ -40,32 +40,25 @@ func printManifest(services []string) {
 }
 
 func main() {
-	app := cli.NewApp()
-	app.Name = "genman"
-	app.Usage = "Generate a manifest of artifacts"
-	app.Version = "0.0.1"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "root, r",
-			Value: "/home/fubar/artifacts/0.0.1-SNAPSHOT",
-			Usage: "root directory for active jars",
-		},
-		cli.StringFlag{
-			Name:  "cache, c",
-			Value: "/opt/cache",
-			Usage: "cache directory for shared jars",
-		},
+	var root, cache string
+	flag.StringVar(&root, "r", "/home/fubar/artifacts/0.0.1-SNAPSHOT", "root directory for active jars")
+	flag.StringVar(&cache, "c", "/opt/cache", "cache directory for shared jars")
+	flag.Usage = func() {
+		fmt.Printf("Usage of %s:\n", os.Args[0])
+		fmt.Printf("  %s -r /root/directory -c /op/cache\n", os.Args[0])
+		flag.PrintDefaults()
 	}
-	app.Action = func(c *cli.Context) {
-		root := c.String("root")
-		if _, err := os.Stat(root); os.IsNotExist(err) {
-			fmt.Printf("No such file or directory: %s\n", root)
-		}
-		cache := c.String("cache")
-		if _, err := os.Stat(cache); os.IsNotExist(err) {
-			fmt.Printf("No such file or directory: %s\n", cache)
-		}
-		printManifest(findJars(root))
+	flag.Parse()
+
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		fmt.Printf("No such file or directory: %s\n", root)
+		return
 	}
-	app.Run(os.Args)
+
+	if _, err := os.Stat(cache); os.IsNotExist(err) {
+		fmt.Printf("No such file or directory: %s\n", cache)
+		return
+	}
+
+	printManifest(findJars(root))
 }
